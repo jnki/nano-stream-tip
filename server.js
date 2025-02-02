@@ -14,13 +14,14 @@ app.post("/create-invoice", async (req, res) => {
     console.log("Received request:", req.body); // ✅ Debugging
     
     const { username, amount, message } = req.body;
-    const streamchannel = "twitch.tv/jenoki";                     // ⬅️ SET THIS TO YOUR OWN CHANNEL! it will show up as the tip description
+    const streamchannel = process.env.STREAM_CHANNEL;        // ✅ Now loaded from .env - shows up as tip description
 
     if (!username || !amount || parseFloat(amount) <= 0) {
         return res.status(400).json({ error: "Invalid input" });
     }
 
-    const recipientAddress = "nano_1rnmtpo78c3o37otjqmaoji78sgyjwaaywg1r7pzncaeiqxiz7344nhuqny1"; // ⬅️ Replace with your own Nano address
+    const recipientAddress = process.env.NANO_ADDRESS;  // ✅ Now loaded from .env
+    const redirectUrl = process.env.REDIRECT_URL;       // ✅ Now loaded from .env
 
     try {
         const response = await fetch("https://nanopay.me/api/invoices", {
@@ -35,7 +36,7 @@ app.post("/create-invoice", async (req, res) => {
                 price: parseFloat(amount),  // ✅ Keep this
                 recipient_address: recipientAddress, // ✅ Required field
                 metadata: { username, message },
-                redirect_url: "https://jenoki.net"      // ⬅️ Replace with your own site or twitch channel
+                redirect_url: redirectUrl
             })
         });
 
