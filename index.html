@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Twitch Tip via NanoPay</title>
+    <style>
+        body {
+            font-family: monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: rgb(44,41,56);
+            background: linear-gradient(180deg, rgba(44,41,56,1) 0%, rgba(86,83,133,1) 50%, rgba(93,171,153,1) 100%);
+        }
+        a {
+            color: #ab8bd5;
+            transition: 0.7s;
+
+        }
+        a:hover {
+            color: #31e7bd;
+            transition: 0.7s;
+
+        }
+        .container {
+            text-align: center;
+            padding: 20px;
+            color: #31e7bd;
+            background-color: #1a1a1a;
+            border-radius: 2%;
+            box-shadow: 0 0 100px #ab8bd5;
+            transition: 0.7s;
+        }
+        .container:hover {
+            box-shadow: 0 0 100px #8de8bf;
+            transition: 0.7s;
+        }
+        .container h1{
+            color: #e715a5;
+        }
+        input {
+            text-align: center;
+            color: #31e7bd;
+            font-family: monospace;
+            margin: 5px;
+            padding: 8px;
+            font-size: 14px;
+            background: #212121;
+            border:none;
+            border-radius: 3px;
+        }
+        #message {
+            width:320px;
+            height:50px;
+        }
+        button {
+            font-family: monospace;
+            margin-top: 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #e715a5;
+            color: #e2e2e2;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #31e7bd;
+            color: #303030;
+            transition: 0.7s;
+        }
+        button:active {
+            background-color: #b5e731;
+            color: #303030;
+        }
+        button:disabled {
+            background-color: #ddd;
+            color: #a2a2a2;
+            transition: 0.7s;
+        }
+        .nano-info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            color: #bababa;
+            background-color: rgba(44, 44, 44, 0.76);
+            border-radius: 5px;
+            max-width: 375px;
+            transition: 0.3s;
+        }
+        .nano-info:hover {
+            background-color: rgba(44, 44, 44, 0.92);
+            transition: 0.3s;
+        }
+        .nano-info h2 {
+            color: #31e7bd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Tip Jenoki<br>with Ӿ (Nano)!</h1>
+        <p>Enter your username and the amount you wish to tip.<br>Include a message to be displayed on stream.</p>
+        <form id="tip-form">
+            <input type="text" id="username" placeholder="Your Username" required maxlength="25" minlength="4" pattern="^[^\s]+$" title="No spaces allowed"><br>
+            <input type="text" id="message" placeholder="Your message here" maxlength="255"><br>
+            <input type="number" id="amount" placeholder="Amount in Ӿ (XNO)" min="0.01" step="0.01" required><br>
+            <button type="submit" id="tip-btn">Send Tip</button>
+        </form>
+        <p id="loading-message" style="display: none;">Creating payment link...</p>
+    </div>
+    
+    <div class="nano-info">
+        <h2>What is Nano?</h2>
+        <p>Nano (XNO) is a fast, fee-less digital currency designed for instant transactions. It uses a unique block-lattice architecture to provide scalable and environmentally friendly digital payments.
+        <br><br><a href="https://nano.org">Find out more here.</a></p>
+    </div>
+
+    <script>
+        const backendURL = "http://localhost:3000"; // Change this to wherever you're hosting your backend.
+        // When the form is submitted
+        document.getElementById("tip-form").addEventListener("submit", async function (e) {
+            e.preventDefault(); // Prevent the form from refreshing the page
+
+            const username = document.getElementById("username").value;       // Get the username
+            const amount = document.getElementById("amount").value;           // Get the amount
+            const message = document.getElementById("message").value.trim();  // Get the message
+
+            // Check if username has spaces or exceeds 25 characters
+            if (!username || username.length < 4 || username.length > 25 || /\s/.test(username)) {
+            alert("Username must be more than 4 and less than 25 characters, and cannot contain spaces.");
+                return;
+            }
+
+            // Basic validation
+            if (!username || !amount || parseFloat(amount) <= 0) {
+                alert("Please provide a valid username and amount.");
+                return;
+            }
+
+            // Disable the button and show loading message
+            document.getElementById("tip-btn").disabled = true;
+            document.getElementById("loading-message").style.display = "block";
+
+            try {
+                const response = await fetch(`${backendURL}/create-invoice`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ username, amount, message }) // ✅ Ensure JSON is sent properly
+                });
+
+                if (!response.ok) {
+                    throw new Error("Failed to create invoice.");
+                }
+
+                const data = await response.json();
+                console.log("Server Response:", data); // ✅ Debugging
+
+                // If payment link is created successfully
+                if (data.payment_url) {
+                    window.location.href = data.payment_url;  // Redirect to the NanoPay payment page
+                } else {
+                    alert("Failed to create payment link. Please try again.");
+                }
+            } catch (error) {
+                console.error("Error:", error);
+                alert("An error occurred. Please try again.");
+            }
+
+            // Re-enable the button and hide loading message
+            document.getElementById("tip-btn").disabled = false;
+            document.getElementById("loading-message").style.display = "none";
+        });
+    </script>
+</body>
+</html>
