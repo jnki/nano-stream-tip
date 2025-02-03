@@ -40,3 +40,7 @@ You can edit and style index.html as you see fit!
 ### I would recommend changing the minimum tip amount to whatever you'd prefer
 `<input type="number" id="amount" placeholder="Amount in Ӿ (XNO)" min="0.01" step="0.01" required><br>`
 <br>On this line change the min="0.01" to whatever value you like.
+
+# See it live in action, maybe...
+I sometimes stream on https://twitch.tv/jenoki
+<br><sup>what? i gotta plug my channel somehwere ok?</sup>
