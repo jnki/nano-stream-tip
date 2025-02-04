@@ -19,7 +19,8 @@ REDIRECT_URL= The website you want the viewer to be redirected to after they hav
 STREAM_CHANNEL= Your twitch channel, like twitch.tv/jenoki. Don't need the https here.
 ```
 
-Sign up with [NanoPay.me](https://github.com/nanopay/nanopay.me) to get your own API token.
+Sign up with [NanoPay.me](https://github.com/nanopay/nanopay.me) to get your own API token.<br>
+You'll also need to create a Webhook in NanoPay.Me, and set the "Hook URL" to your backend, followed by /nanopay_webhook e.g. `https://yourbackend.url/nanopay_webhook`
 
 You can find your StreamElements JWT token and Channel/Account ID here in your [StreamElements account settings](https://streamelements.com/dashboard/account/channels)
 
