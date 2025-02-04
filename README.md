@@ -2,7 +2,7 @@
 
 Nano Stream Tip lets you accept XNO (Nano currency) using [NanoPay.me](https://github.com/nanopay/nanopay.me), and then sends an alert which will be displayed live on your Twitch or Youtube stream via [StreamElements](https://streamelements.com).
 
-![image](https://github.com/user-attachments/assets/2a699397-298d-480a-968c-0259708f5a1f)
+![image](https://github.com/user-attachments/assets/a7705274-f7c4-4f5c-9278-4c2f1f63803b)
 
 
 # Server config
@@ -28,7 +28,8 @@ You can find your StreamElements JWT token and Channel/Account ID here in your [
 
 # Frontend Config
 
-You can edit and style index.html as you see fit!
+The frontend is the images folder and the index.html.<br>
+You can edit and style index.html, and add images/logos as you see fit!
 
 ### You'll certainly need to change the following line:<br>
 `const backendURL = "https://api.jenoki.net"; // Change this to wherever you're hosting your backend.`
