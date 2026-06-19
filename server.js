@@ -93,6 +93,9 @@ app.post("/nanopay-webhook", async (req, res) => {
 // Send alert to Streamer.bot
 
 async function sendStreamerBotAlert(username, message, amount) {
+    const exchangeRate = await getNanoToUsdRate();
+    const amountInUsd = (amount * exchangeRate).toFixed(2);
+
     try {
         const response = await fetch(`${process.env.STREAMERBOT_URL}/DoAction`, {
             method: "POST",
@@ -105,18 +108,32 @@ async function sendStreamerBotAlert(username, message, amount) {
                 args: {
                     tipName: username,
                     tipAmount: String(amount),
+                    tipAmountUsd: amountInUsd,
                     tipMessage: message
                 }
             })
         });
 
         if (response.status === 204) {
-            console.log(`✅ Streamer.bot action triggered for ${username}: ${amount} XNO`);
+            console.log(`✅ Streamer.bot action triggered for ${username}: ${amount} XNO (~$${amountInUsd} USD)`);
         } else {
             console.error("❌ Streamer.bot error:", response.status, await response.text());
         }
     } catch (error) {
         console.error("❌ Error contacting Streamer.bot:", error);
+    }
+}
+
+// Get current Nano (XNO) to USD exchange rate
+
+async function getNanoToUsdRate() {
+    try {
+        const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=nano&vs_currencies=usd");
+        const data = await response.json();
+        return data.nano.usd;
+    } catch (error) {
+        console.error("❌ Failed to get Nano price:", error);
+        return 5.00; // fallback rate
     }
 }
 
