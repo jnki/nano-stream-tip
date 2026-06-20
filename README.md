@@ -75,7 +75,7 @@ Start Server
 The frontend is the images folder and the index.html.<br>
 You can edit and style index.html, and add images/logos as you see fit!
 
-### You'll certainly need to change the following line:<br>
+### You'll certainly need to change the following line in index.html:<br>
 `const backendURL = "https://api.jenoki.net"; // Change this to wherever you're hosting your backend.`
 <br>You'll need to point this to wherever you're hosting the server.js etc.
 
