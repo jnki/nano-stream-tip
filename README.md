@@ -88,6 +88,7 @@ You can edit and style index.html, and add images/logos as you see fit!
 <br>On this line change the min="0.01" to whatever value you like.
 
 # Overlay Alert
+<img width="514" height="243" alt="image" src="https://github.com/user-attachments/assets/f4c6de0a-d6a5-4bad-b782-c6a150a4bb60" />
 
 I've included a very basic example alert overlay (nano-tip-alert-demo.html).<br>
 You can check the source and have a look at the WebSocket section.<br>
