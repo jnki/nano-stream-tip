@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nano Tip Alert</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet" />
+  <style>
+    /* ============================================================
+       CONFIGURATION — edit these to customise your alert
+       ============================================================ */
+    :root {
+      --nano-blue:   #4ABDE8;   /* Nano brand colour            */
+      --text-main:   #FFFFFF;   /* Username / amount colour     */
+      --text-msg:    #CBD5E1;   /* Message text colour          */
+      --card-bg:     rgba(10, 16, 28, 0.85); /* Alert card background */
+      --hold-ms:     5000;      /* How long the alert stays (ms) */
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: transparent;
+      font-family: 'Space Grotesk', sans-serif;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── Alert card ───────────────────────────────────────────── */
+    #alert {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 18px 24px;
+      background: var(--card-bg);
+      border: 1px solid rgba(74, 189, 232, 0.35);
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      max-width: 480px;
+      width: 90%;
+      margin-top: 20px;
+      box-shadow: 0 0 32px rgba(74, 189, 232, 0.15);
+      animation-fill-mode: forwards;
+    }
+
+    #alert.show {
+      display: flex;
+      animation: slideIn 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    #alert.hide {
+      animation: slideOut 0.4s ease-in forwards;
+    }
+
+    /* ── Media (gif / webm) ───────────────────────────────────── */
+    #media-wrap {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+    }
+
+    #alert-video {
+      max-height: 160px;
+      max-width: 100%;
+      border-radius: 8px;
+      object-fit: contain;
+      display: none;
+    }
+
+    #alert-img {
+      max-height: 160px;
+      max-width: 100%;
+      border-radius: 8px;
+      object-fit: contain;
+      display: none;
+    }
+
+    /* ── Text ─────────────────────────────────────────────────── */
+    #alert-main {
+      color: var(--text-main);
+      font-size: 1.15rem;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    #alert-main .name   { color: var(--nano-blue); }
+    #alert-main .amount { color: var(--nano-blue); }
+
+    #alert-msg {
+      color: var(--text-msg);
+      font-size: 0.95rem;
+      font-weight: 400;
+      text-align: center;
+      font-style: italic;
+      display: none;
+    }
+
+    /* ── Animations ───────────────────────────────────────────── */
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-28px) scale(0.96); }
+      to   { opacity: 1; transform: translateY(0)     scale(1);    }
+    }
+
+    @keyframes slideOut {
+      from { opacity: 1; transform: translateY(0)    scale(1);    }
+      to   { opacity: 0; transform: translateY(-20px) scale(0.96); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="alert">
+  <div id="media-wrap">
+    <!-- webm/mp4 plays first; falls back to gif if video fails -->
+    <video id="alert-video" muted playsinline loop></video>
+    <img   id="alert-img" alt="" />
+  </div>
+  <div id="alert-main"></div>
+  <div id="alert-msg"></div>
+</div>
+
+<audio id="alert-audio" preload="auto"></audio>
+
+<script>
+  // ============================================================
+  //  FILES — put your media in the same folder as this HTML and
+  //  set the paths below.  Leave a value empty ("") to skip it.
+  // ============================================================
+  const MEDIA_VIDEO = "alert.webm";   // or alert.mp4 — leave "" to skip
+  const MEDIA_GIF   = "images/NanoStreamTipSpin.gif";             // fallback gif  — leave "" to skip
+  const MEDIA_AUDIO = "audio/alert.mp3";   // sound file    — leave "" to skip
+
+  // ============================================================
+  //  STREAMER.BOT WEBSOCKET
+  // ============================================================
+  const WS_URL = "ws://127.0.0.1:8080";
+
+  // ============================================================
+  //  internals — no need to edit below here
+  // ============================================================
+  const elAlert = document.getElementById("alert");
+  const elMain  = document.getElementById("alert-main");
+  const elMsg   = document.getElementById("alert-msg");
+  const elVideo = document.getElementById("alert-video");
+  const elImg   = document.getElementById("alert-img");
+  const elAudio = document.getElementById("alert-audio");
+
+  let queue = [];
+  let busy  = false;
+
+  function showAlert({ name, amount, amountUsd, message }) {
+    // Build amount string
+    let amtStr = amount ? `Ӿ${parseFloat(amount).toFixed(2)}` : "";
+    if (amountUsd) amtStr += ` | $${parseFloat(amountUsd).toFixed(2)}`;
+
+    // Text
+    elMain.innerHTML =
+      `<span class="name">${esc(name)}</span> just tipped` +
+      (amtStr ? ` <span class="amount">${esc(amtStr)}</span>` : "") + `!`;
+
+    if (message && message.trim()) {
+      elMsg.textContent = `"${message.trim()}"`;
+      elMsg.style.display = "block";
+    } else {
+      elMsg.style.display = "none";
+    }
+
+    // Media
+    elVideo.style.display = "none";
+    elImg.style.display   = "none";
+
+    if (MEDIA_VIDEO) {
+      elVideo.src = MEDIA_VIDEO;
+      elVideo.style.display = "block";
+      elVideo.load();
+      elVideo.play().catch(() => {
+        // video failed — try gif
+        elVideo.style.display = "none";
+        if (MEDIA_GIF) { elImg.src = MEDIA_GIF; elImg.style.display = "block"; }
+      });
+    } else if (MEDIA_GIF) {
+      elImg.src = MEDIA_GIF;
+      elImg.style.display = "block";
+    }
+
+    // Sound
+    if (MEDIA_AUDIO) {
+      elAudio.src = MEDIA_AUDIO;
+      elAudio.currentTime = 0;
+      elAudio.play().catch(() => {});
+    }
+
+    // Show card
+    elAlert.classList.remove("hide");
+    elAlert.classList.add("show");
+
+    const holdMs = parseInt(getComputedStyle(document.documentElement)
+      .getPropertyValue("--hold-ms")) || 5000;
+
+    setTimeout(() => {
+      elAlert.classList.remove("show");
+      elAlert.classList.add("hide");
+      elVideo.pause();
+      setTimeout(() => {
+        elAlert.classList.remove("hide");
+        elAlert.style.display = "none";
+        busy = false;
+        processQueue();
+      }, 450);
+    }, holdMs);
+  }
+
+  function processQueue() {
+    if (busy || queue.length === 0) return;
+    busy = true;
+    showAlert(queue.shift());
+  }
+
+  function enqueue(data) {
+    queue.push(data);
+    processQueue();
+  }
+
+  function esc(s) {
+    return String(s || "")
+      .replace(/&/g,"&amp;").replace(/</g,"&lt;")
+      .replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  // ── WebSocket ─────────────────────────────────────────────────
+  let ws, reconnectTimer;
+
+  function connect() {
+    clearTimeout(reconnectTimer);
+    ws = new WebSocket(WS_URL);
+
+    ws.onopen = () => {
+      console.log("✅ Connected to Streamer.bot");
+      ws.send(JSON.stringify({
+        request: "Subscribe",
+        id: "nano-tip-alert",
+        events: { General: ["Custom"] }
+      }));
+    };
+
+    ws.onmessage = (e) => {
+      let m;
+      try { m = JSON.parse(e.data); } catch { return; }
+
+      const src  = m?.event?.source;
+      const type = m?.event?.type;
+      let d = m?.data || {};
+      if (typeof d === "string") { try { d = JSON.parse(d); } catch { d = {}; } }
+
+      if (src === "General" && type === "Custom" && d.event === "nano_tip") {
+        enqueue({
+          name:      d.name      || "Someone",
+          amount:    d.amount    || "0",
+          amountUsd: d.amountUsd || null,
+          message:   d.message   || ""
+        });
+      }
+    };
+
+    ws.onclose = () => { reconnectTimer = setTimeout(connect, 5000); };
+    ws.onerror = () => ws.close();
+  }
+
+  connect();
+
+  // ── Keyboard test (press T to preview) ───────────────────────
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "t" || e.key === "T") {
+      enqueue({
+        name:      "TestViewer",
+        amount:    "5.00",
+        amountUsd: "2.50",
+        message:   "Keep up the great stream!"
+      });
+    }
+  });
+</script>
+</body>
+</html>
