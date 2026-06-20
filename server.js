@@ -128,9 +128,17 @@ async function sendStreamerBotAlert(username, message, amount) {
 
 async function getNanoToUsdRate() {
     try {
-        const response = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=nano&vs_currencies=usd");
+        const response = await fetch("https://pro-api.coingecko.com/api/v3/simple/price?ids=nano&vs_currencies=usd", {
+            headers: {
+                "x-cg-demo-api-key": process.env.COINGECKO_API_KEY
+            }
+        });
         const data = await response.json();
-        return data.nano.usd;
+        if (data.nano?.usd) {
+            console.log(`✅ Nano price: $${data.nano.usd}`);
+            return data.nano.usd;
+        }
+        throw new Error("No price in response: " + JSON.stringify(data));
     } catch (error) {
         console.error("❌ Failed to get Nano price:", error);
         return 5.00; // fallback rate
