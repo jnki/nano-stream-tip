@@ -127,13 +127,8 @@ async function sendStreamerBotAlert(username, message, amount) {
 // Get current Nano (XNO) to USD exchange rate
 
 async function getNanoToUsdRate() {
-    console.log("🔑 API Key present:", !!process.env.COINGECKO_API_KEY);
     try {
-        const response = await fetch("https://pro-api.coingecko.com/api/v3/simple/price?ids=nano&vs_currencies=usd", {
-            headers: {
-                "x-cg-demo-api-key": process.env.COINGECKO_API_KEY
-            }
-        });
+        const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=nano&vs_currencies=usd&x_cg_demo_api_key=${process.env.COINGECKO_API_KEY}`);
         const data = await response.json();
         if (data.nano?.usd) {
             console.log(`✅ Nano price: $${data.nano.usd}`);
